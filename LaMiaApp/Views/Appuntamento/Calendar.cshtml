@@ -1,0 +1,193 @@
+﻿
+@{
+    ViewBag.Title = "Calendar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Calendar</h2>
+<div id="calendar"></div>
+
+<!-- Modal FORM -->
+
+<div class="modal fade" id="myModalForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Aggiungi/Modifica Appuntamento</h4>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <form class="form-horizontal" role="form">
+                    <div class="control-group">
+                        <label class="control-label" for="when">Quando:</label>
+                        <div class="controls controls-row" id="when" style="margin-top:5px;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <div class="tt-container">
+                            <input id="cliente" name="cliente" data-rule-validCliente="true" required type="text" value="" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Trattamento</label>
+                        <div class="tt-container">
+                            <input id="trattamento" name="trattamento" data-rule-validTrattamento="true" required type="text" value="" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 col-sm-4">
+                            <ul id="trattamenti" class="list-group"></ul>
+                        </div>
+                    </div>
+                    <input type="hidden" id="apptStartTime" />
+                    <input type="hidden" id="apptEndTime" />
+                    <input type="hidden" id="apptAllDay" />
+                </form>
+            </div>
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    Annulla
+                </button>
+                <button type="button" class="btn btn-primary">
+                    Salva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section scripts
+{
+    @Scripts.Render("~/bundles/fullcalendar")
+    @Styles.Render("~/Content/css/fullcalendar")
+
+    <script>
+        $(document).ready(function () {
+
+            var vm = {
+                trattamentiIds: []
+            };
+
+            var clienti = new Bloodhound({
+                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('nome'),
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: '/api/cliente?query=%QUERY',
+                    wildcard: '%QUERY'
+                }
+            });
+
+            $('#cliente').typeahead({
+                minLength: 3,
+                highlight: true
+            },
+            {
+                name: 'cliente',
+                display: function (item) { return item.Nome + ' ' + item.Cognome },
+                source: clienti
+            }).on("typeahead:select", function (e, cliente) {
+                vm.clienteId = cliente.id;
+            });
+
+            var trattamenti = new Bloodhound({
+                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('nome'),
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: '/api/trattamento?query=%QUERY',
+                    wildcard: '%QUERY'
+                }
+            });
+
+            $('#trattamento').typeahead({
+                minLength: 3,
+                highlight: true
+            },
+            {
+                name: 'trattamento',
+                display: 'Nome',
+                source: trattamenti
+            }).on("typeahead:select", function (e, trattamento) {
+                $("#trattamenti").append("<li class='list-group-item'>" + trattamento.Nome + "</li>");
+
+                    $("#trattamento").typeahead("val", "");
+
+                    vm.trattamentiIds.push(movie.id);
+             });
+
+            $('#calendar').fullCalendar({
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'agendaWeek,agendaDay,listWeek' //month
+                },
+                minTime: "07:00:00",
+                maxTime: "21:00:00",
+                slotDuration: '00:15:00', 
+                defaultDate: '2017-10-12',
+                navLinks: true, // can click day/week names to navigate views
+                selectable: true,
+                selectHelper: true,
+                select: /*function (start, end) {
+                    var title = prompt('Event Title:');
+                    var eventData;
+                    if (title) {
+                        eventData = {
+                            title: title,
+                            start: start,
+                            end: end
+                        };
+                        $('#calendar').fullCalendar('renderEvent', eventData, true); // stick? = true
+                    }*/
+                    function (start, end) {
+                        endtime = $.fullCalendar.formatDate(end, 'h:mm tt');
+                        starttime = $.fullCalendar.formatDate(start, 'ddd, MMM d, h:mm tt');
+                        var mywhen = starttime + ' - ' + endtime;
+                        $('#myModalForm #apptStartTime').val(start);
+                        $('#myModalForm #apptEndTime').val(end);
+                        $('#myModalForm #when').text(mywhen);
+                        $('#myModalForm').modal('show');
+                        $('#myModalForm').modal('show');
+
+                    $('#calendar').fullCalendar('unselect');
+                },
+                editable: true,
+                businessHours: {
+                    // days of week. an array of zero-based day of week integers (0=Sunday)
+                    dow: [1, 2, 3, 4, 5], // Monday - Friday
+
+                    start: '8:30', // a start time (8.30am)
+                    end: '18:00', // an end time (6pm)
+                },
+                eventConstraint: {
+                    dow: [1, 2, 3, 4, 5], // Monday - Friday
+
+                    start: '8:30', // a start time (8.30am)
+                    end: '18:00', // an end time (6pm)
+                },
+                eventLimit: true, // allow "more" link when too many events
+                events: [
+                    {
+                        id: 999,
+                        title: 'All Day Event',
+                        start: '2017-10-07',
+                        end: '2017-10-10'
+                    },
+                    {
+                        title: 'Click for Google',
+                        url: 'http://google.com/',
+                        start: '2017-10-13'
+                    }
+                ]
+            });
+        });
+    </script>
+}
