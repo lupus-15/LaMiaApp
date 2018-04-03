@@ -31,6 +31,5 @@ namespace LaMiaApp.Models
         [Required]
         public Cliente Cliente { get; set; }
 
-
     }
 }

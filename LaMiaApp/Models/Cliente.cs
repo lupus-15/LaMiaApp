@@ -27,5 +27,6 @@ namespace LaMiaApp.Models
         public String NumeroTelefono { get; set; }
 
         public String Email { get; set; }
+        
     }
 }
