@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using LaMiaApp.Models;
+using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
-using LaMiaApp.Models;
+
 
 namespace LaMiaApp.Controllers.Api
 {
@@ -88,18 +86,28 @@ namespace LaMiaApp.Controllers.Api
         }
 
         // POST: api/Appuntamento
-        [ResponseType(typeof(Appuntamento))]
-        public IHttpActionResult PostAppuntamento(Appuntamento appuntamento)
+        [Route("api/Appuntamento/PostAppuntamento")]
+        [HttpPost]
+        public IHttpActionResult PostAppuntamento(int? AppuntamentoId, int? ClienteId,/* List<int> Trattamenti, */DateTime DataInizio, DateTime DataFine)
         {
-            if (!ModelState.IsValid)
+            //TODO: Controllo se arrivano valori non validi
+
+            var appuntamento = new Appuntamento();
+
+            if (AppuntamentoId != null)
             {
-                return BadRequest(ModelState);
+                appuntamento.Id = _context.Appuntamenti.Find(AppuntamentoId).Id;
             }
+
+            appuntamento.Cliente = _context.Clienti.Find(ClienteId);
+           // appuntamento.Trattamenti = _context.Trattamenti.Where(x => Trattamenti.Contains(x.Id)).ToList();
+            appuntamento.DataInizio = DataInizio;
+            appuntamento.DataFine = DataFine;
 
             _context.Appuntamenti.Add(appuntamento);
             _context.SaveChanges();
 
-            return CreatedAtRoute("DefaultApi", new { id = appuntamento.Id }, appuntamento);
+            return Ok();
         }
 
         // DELETE: api/Appuntamento/5
