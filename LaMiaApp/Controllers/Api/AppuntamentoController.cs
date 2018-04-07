@@ -19,22 +19,20 @@ namespace LaMiaApp.Controllers.Api
         public IHttpActionResult GetAppuntamenti(string start = "2000-01-01T00:00:00", string end = "2100-01-01T00:00:00")
         {
             //12/10/2017 14:00:00
-            DateTime da = DateTime.ParseExact(start, "yyyy-MM-ddTHH:mm:ss",CultureInfo.InvariantCulture);
-            DateTime a = DateTime.ParseExact(end , "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+            DateTime da = DateTime.ParseExact(start, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+            DateTime a = DateTime.ParseExact(end, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
 
-            var Table3Qry = from app in _context.Appuntamenti
-                            join t in _context.Trattamenti
-                            on app.Id equals t.Id
+            var result = from app in _context.Appuntamenti
                             where app.DataInizio >= da && app.DataFine <= a
                             select new
                             {
-                                title = app.Cliente.Nome + " " + app.Cliente.Cognome + " - " +  t.Nome,
+                                title = app.Cliente.Nome + " " + app.Cliente.Cognome,
                                 start = app.DataInizio,
                                 end = app.DataFine
                             };
 
 
-            return Ok(Table3Qry);
+            return Ok(result);
         }
 
         // GET: api/Appuntamento/5
@@ -100,7 +98,7 @@ namespace LaMiaApp.Controllers.Api
             }
 
             appuntamento.Cliente = _context.Clienti.Find(ClienteId);
-           // appuntamento.Trattamenti = _context.Trattamenti.Where(x => Trattamenti.Contains(x.Id)).ToList();
+            // appuntamento.Trattamenti = _context.Trattamenti.Where(x => Trattamenti.Contains(x.Id)).ToList();
             appuntamento.DataInizio = DataInizio;
             appuntamento.DataFine = DataFine;
 
