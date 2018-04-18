@@ -13,7 +13,6 @@ namespace LaMiaApp.Models
         [Required]
         public int Id { get; set; }
 
-        [Required]
         [StringLength(maximumLength: 255)]
         [Display(Name = "Titolo")]
         public string Titolo { get; set; }

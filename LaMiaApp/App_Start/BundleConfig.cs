@@ -21,6 +21,9 @@ namespace LaMiaApp
                         "~/Scripts/lib/moment.min.js",
                         "~/Scripts/fullcalendar.js"
                         ));
+            bundles.Add(new ScriptBundle("~/bundles/datetimepicker").Include(
+                        "~/Scripts/bootstrap-datetimepicker.min.js"
+                        ));
 
             // Utilizzare la versione di sviluppo di Modernizr per eseguire attività di sviluppo e formazione. Successivamente, quando si è
             // ready for production, use the build tool at https://modernizr.com to pick only the tests you need.
@@ -34,6 +37,8 @@ namespace LaMiaApp
 
             bundles.Add(new StyleBundle("~/Content/css/fullcalendar").Include(
                        "~/Content/fullcalendar.css"));
+            bundles.Add(new StyleBundle("~/Content/css/datetimepicker").Include(
+                       "~/Content/_bootstrap-datetimepicker.less"));
 
 
         }

@@ -19,29 +19,20 @@
                 </button>
                 <h4 class="modal-title" id="myModalLabel">Aggiungi/Modifica Appuntamento</h4>
             </div>
-            @using (Html.BeginForm())
-            {
             <!-- Modal Body -->
             <div class="modal-body">
                 <form class="form-horizontal" role="form">
-                    <div class="control-group">
-                        <div class='col-sm-6'>
-                            <div class="form-group">
-                                <div class='input-group date' id='datetimepicker3'>
-                                    <input type='text' class="form-control" />
-                                    <span class="input-group-addon">
-                                        <span class="glyphicon glyphicon-time"></span>
-                                    </span>
-                                </div>
-                            </div>
+                    <div class="form-group">
+                        @*<label>Quando</label>*@
+                        <label id="when"></label>
+                    </div>
+                    <div class="form-group">
+                        <div class='input-group date' id='datetimepicker'>
+                            <input type='text' class="form-control" id='apptStartTime' />
                         </div>
-                        <script type="text/javascript">
-                            $(function () {
-                                $('#datetimepicker3').datetimepicker({
-                                    format: 'LT'
-                                });
-                            });
-                        </script>
+                        <div class='input-group date' id='datetimepicker'>
+                            <input type='text' class="form-control" id='apptEndTime' />
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Cliente</label>
@@ -56,13 +47,11 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4 col-sm-4">
+                        <div class="col-md-12 col-sm-12">
                             <ul id="trattamenti" class="list-group"></ul>
                         </div>
                     </div>
-                    <input type="hidden" id="apptStartTime" />
-                    <input type="hidden" id="apptEndTime" />
-                    <input type="hidden" id="apptAllDay" />
+                    <input type="hidden" id="appuntamento_id" />
                 </form>
             </div>
             <!-- Modal Footer -->
@@ -70,12 +59,8 @@
                 <button type="button" class="btn btn-default" data-dismiss="modal">
                     Annulla
                 </button>
-                <!-- <button type="button" class="btn btn-primary">
-                    Salva
-                </button>-->
-                <input class="btn btn-primary" type="submit" value="Add" />
+                <input id="button_salva" class="btn btn-primary" type="submit" value="Salva" />
             </div>
-            }
         </div>
     </div>
 </div>
@@ -84,12 +69,21 @@
 {
     @Scripts.Render("~/bundles/fullcalendar")
     @Styles.Render("~/Content/css/fullcalendar")
+    @Scripts.Render("~/bundles/datetimepicker")
+    @Styles.Render("~/Content/css/datetimepicker")
 
-<script>
+    <script>
         $(document).ready(function () {
 
+            $('#apptStartTime').datetimepicker({
+                format: "HH:mm"
+            });
+            $('#apptEndTime').datetimepicker({
+                format: "HH:mm"
+            });
+
             var vm = {
-                trattamentiIds: []
+                TrattamentiIds: []
             };
 
             var clienti = new Bloodhound({
@@ -101,17 +95,19 @@
                 }
             });
 
-            $('#cliente').typeahead({
-                minLength: 3,
-                highlight: true
-            },
+            $('#cliente').typeahead(
+                {
+                    minLength: 0,
+                    highlight: true
+                },
                 {
                     name: 'cliente',
                     display: function (item) { return item.Nome + ' ' + item.Cognome },
                     source: clienti
                 }).on("typeahead:select", function (e, cliente) {
-                    vm.clienteId = cliente.id;
-                });
+                    vm.ClienteId = cliente.Id;
+                }
+                );
 
             var trattamenti = new Bloodhound({
                 datumTokenizer: Bloodhound.tokenizers.obj.whitespace('nome'),
@@ -122,21 +118,24 @@
                 }
             });
 
-            $('#trattamento').typeahead({
-                minLength: 3,
-                highlight: true
-            },
+            $('#trattamento').typeahead(
+                {
+                    minLength: 0,
+                    highlight: true
+                },
                 {
                     name: 'trattamento',
                     display: 'Nome',
                     source: trattamenti
                 }).on("typeahead:select", function (e, trattamento) {
-                    $("#trattamenti").append("<li class='list-group-item'>" + trattamento.Nome + "</li>");
+                    $("#trattamenti").append("<li class='list-group-item'>" + trattamento.Nome +
+                        "<span onclick='rimuoviTrattamento(" + trattamento.Id + ");' class='glyphicon glyphicon-remove' style='float: right; color: red;'></span></li>");
 
                     $("#trattamento").typeahead("val", "");
 
-                    vm.trattamentiIds.push(movie.id);
-                });
+                    vm.TrattamentiIds.push(trattamento.Id);
+                }
+                );
 
             $('#calendar').fullCalendar({
                 header: {
@@ -153,19 +152,51 @@
                 selectable: true,
                 selectHelper: true,
                 select:
-                function (start, end) {
-                    endtime = $.fullCalendar.formatDate(end, 'h:mm tt');
-                    starttime = $.fullCalendar.formatDate(start, 'ddd, MMM d, h:mm tt');
-                    var mywhen = starttime + ' - ' + endtime;
-                    $('#myModalForm #apptStartTime').val(start);
-                    $('#myModalForm #apptEndTime').val(end);
-                    $('#myModalForm #when').text(mywhen);
-                    $('#myModalForm').modal('show');
-                    $('#myModalForm').modal('show');
+                    function (start, end) {
+                        starttime = $.fullCalendar.formatDate(start, 'HH:mm');
+                        endtime = $.fullCalendar.formatDate(end, 'HH:mm');
+                        var mywhen = $.fullCalendar.formatDate(start, 'DD/MM/YYYY');
 
-                    $('#calendar').fullCalendar('unselect');
-                },
+                        $('#myModalForm #apptStartTime').val(starttime);
+                        $('#myModalForm #apptEndTime').val(endtime);
+                        $('#myModalForm #when').text(mywhen);
+                        $('#myModalForm #appuntamento_id').val();
+                        $('#myModalForm #cliente').val("");
+                        $("#trattamenti li").remove()
+
+                        $('#myModalForm').modal('show');
+
+                        $('#calendar').fullCalendar('unselect');
+                    },
                 editable: true,
+                eventClick:
+                    function (event, jsEvent, view) {
+                        starttime = $.fullCalendar.formatDate(event.start, 'HH:mm');
+                        endtime = $.fullCalendar.formatDate(event.end, 'HH:mm');
+                        var mywhen = $.fullCalendar.formatDate(event.start, 'DD/MM/YYYY');
+
+                        $('#myModalForm #apptStartTime').val(starttime);
+                        $('#myModalForm #apptEndTime').val(endtime);
+                        $('#myModalForm #when').text(mywhen);
+                        $('#myModalForm #appuntamento_id').val(event.id);
+                        $('#myModalForm #cliente').val(event.title);
+                        vm.ClienteId = event.cliente_id;
+
+                        $.get("api/Trattamento/GetTrattamentiByAppuntamento", event.id)
+                            .done(function (data) {
+                                $.each(data, function (key, value) {
+                                    $("#trattamenti").append("<li class='list-group-item'>" + value.Nome +
+                                        "<span onclick='rimuoviTrattamento(" + value.Id + ");' class='glyphicon glyphicon-remove' style='float: right; color: red;'></span></li>");
+
+                                    vm.TrattamentiIds.push(value.Id);
+                                });
+                            });
+
+                        $('#myModalForm').modal('show');
+                        $('#myModalForm').modal('show');
+
+                        $('#calendar').fullCalendar('unselect');
+                    },
                 businessHours: {
                     // days of week. an array of zero-based day of week integers (0=Sunday)
                     dow: [1, 2, 3, 4, 5], // Monday - Friday
@@ -182,31 +213,30 @@
             });
 
             //submit
-            $("#formAppuntamento").submit(function (e) {
-                e.preventDefault();
+            $("#button_salva").click(function (e) {
+
                 var apiurl = "api/Appuntamento/PostAppuntamento";
-                var data = {
-                    AppuntamentoId: 1,// $("#appuntamentoId").val().trim(),
-                    ClienteId: 1,//$("#clienteId").val().trim(),
-                    //Trattamenti: $("#clienteId").val(),
-                    DataInizio: $("#apptStartTime").val().trim(),
-                    DataFine: $("#apptEndTime").val().trim()
-                }
-                $.ajax({
-                    url: apiurl,
-                    type: 'POST',
-                    dataType: 'json',
-                    data: data,
-                    success: function (d) {
+
+                if ($('#myModalForm #appuntamento_id').val() != "")
+                    vm.Appuntamentoid = $('#myModalForm #appuntamento_id').val();
+
+                vm.Datainizio = $('#myModalForm #when').text() + " " + $('#myModalForm #apptStartTime').val() + ":00";
+                vm.Datafine = $('#myModalForm #when').text() + " " + $('#myModalForm #apptEndTime').val() + ":00";
+
+                $.post(apiurl, vm)
+                    .done(function () {
                         alert("Saved Successfully");
-                        document.getElementById("formAppuntamento").reset();
-                    },
-                    error: function () {
-                        alert("Error please try again");
-                    }
-                });
+                        //document.getElementById("formAppuntamento").reset();
+                    });
+
             });
 
+
+
         });
-</script>
+
+        function rimuoviTrattamento(id) {
+            console.log(id);
+        }
+    </script>
 }

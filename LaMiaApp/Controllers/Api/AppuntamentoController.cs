@@ -2,6 +2,7 @@
 using System;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Migrations;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -23,13 +24,15 @@ namespace LaMiaApp.Controllers.Api
             DateTime a = DateTime.ParseExact(end, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
 
             var result = from app in _context.Appuntamenti
-                            where app.DataInizio >= da && app.DataFine <= a
-                            select new
-                            {
-                                title = app.Cliente.Nome + " " + app.Cliente.Cognome,
-                                start = app.DataInizio,
-                                end = app.DataFine
-                            };
+                         where app.DataInizio >= da && app.DataFine <= a
+                         select new
+                         {
+                             id = app.Id,
+                             title = app.Cliente.Nome + " " + app.Cliente.Cognome,
+                             start = app.DataInizio,
+                             end = app.DataFine,
+                             cliente_id = app.Cliente.Id
+                         };
 
 
             return Ok(result);
@@ -86,23 +89,29 @@ namespace LaMiaApp.Controllers.Api
         // POST: api/Appuntamento
         [Route("api/Appuntamento/PostAppuntamento")]
         [HttpPost]
-        public IHttpActionResult PostAppuntamento(int? AppuntamentoId, int? ClienteId,/* List<int> Trattamenti, */DateTime DataInizio, DateTime DataFine)
+        public IHttpActionResult PostAppuntamento(DtoAppTratt input)
         {
             //TODO: Controllo se arrivano valori non validi
 
             var appuntamento = new Appuntamento();
 
-            if (AppuntamentoId != null)
+            if (input.Appuntamentoid != 0)
             {
-                appuntamento.Id = _context.Appuntamenti.Find(AppuntamentoId).Id;
+                var app = _context.Appuntamenti.Find(input.Appuntamentoid);
+
+                if (app != null)
+                    appuntamento.Id = app.Id;
+                else
+                    throw new Exception("E' stato ricevuto un Id appuntamento ma non e' stato trovato sul db");
             }
 
-            appuntamento.Cliente = _context.Clienti.Find(ClienteId);
-            // appuntamento.Trattamenti = _context.Trattamenti.Where(x => Trattamenti.Contains(x.Id)).ToList();
-            appuntamento.DataInizio = DataInizio;
-            appuntamento.DataFine = DataFine;
+            appuntamento.Cliente = _context.Clienti.Find(input.Clienteid);
+            //TODO - In Caso di ripetizione non ne aggiunge un altro
+            appuntamento.Trattamenti = _context.Trattamenti.Where(x => input.TrattamentiIds.Any(y => y == x.Id)).ToList();
+            appuntamento.DataInizio = DateTime.ParseExact(input.Datainizio, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+            appuntamento.DataFine = DateTime.ParseExact(input.Datafine, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
 
-            _context.Appuntamenti.Add(appuntamento);
+            _context.Appuntamenti.AddOrUpdate(appuntamento);
             _context.SaveChanges();
 
             return Ok();

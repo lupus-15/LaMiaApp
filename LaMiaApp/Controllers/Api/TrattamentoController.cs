@@ -35,5 +35,20 @@ namespace LaMiaApp.Controllers.Api
 
             return Ok(trattamenti);
         }
+
+        public IHttpActionResult GetTrattamentiByAppuntamento(int appuntamentoId)
+        {
+
+            var result = (from t in _context.Trattamenti
+                         from a in _context.Appuntamenti
+                         where a.Id == appuntamentoId
+                         select new
+                         {
+                             t.Id,
+                             t.Nome
+                         }).ToList();
+
+            return Ok(result);
+        }
     }
 }
